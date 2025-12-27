@@ -8,6 +8,9 @@ Aplicação desktop em Electron para monitorar o tempo de uso de aplicações e 
 
 O DevBalance PRO registra periodicamente a janela ativa do sistema, identifica o processo em execução e armazena o tempo de uso em arquivos JSON locais.  
 Os dados são utilizados para gerar gráficos simples de uso diário, semanal e mensal.
+## Screenshot
+
+![Tela principal da aplicação](https://github.com/user-attachments/assets/3cbeac53-4744-4049-acad-0c351cf2f0ae)
 
 ---
 
@@ -60,7 +63,6 @@ devbalance-pro/
 Funcionamento Básico
 A cada 2 segundos a aplicação verifica a janela ativa.
 
-<img width="1225" height="983" alt="image" src="https://github.com/user-attachments/assets/3cbeac53-4744-4049-acad-0c351cf2f0ae" />
 
 
 
