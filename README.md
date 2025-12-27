@@ -1,110 +1,128 @@
+
+````markdown
 # DevBalance PRO
 
-Uma aplicação desktop de monitoramento de atividades desenvolvida com Electron que rastreia o tempo gasto em aplicativos e websites em tempo real.
+Uma aplicação desktop de alta performance desenvolvida com Electron para monitoramento de produtividade.  
+O DevBalance PRO rastreia automaticamente o tempo gasto em diferentes aplicações e websites, oferecendo visualizações analíticas para uma melhor gestão do tempo.
 
-## Características
+---
 
-- Monitoramento em tempo real de aplicativos ativos
-- Rastreamento de domínios visitados em navegadores
-- Relatórios detalhados (diário, semanal e mensal)
-- Visualização de gráficos interativos
-- Armazenamento local de dados
-- Interface moderna com Tailwind CSS
-- Dados persistentes por data
+## Novidades desta Versão
 
-## Requisitos
+- Monitoramento Nativo v7+  
+  Migração para a API nativa mais recente do active-win, eliminando erros de gerenciamento de memória como External Buffers.
 
-- Node.js 14.0 ou superior
-- npm ou yarn
+- Gráficos Avançados  
+  Implementação de linha de tendência mensal com Chart.js e gráfico semanal customizado utilizando HTML e Tailwind CSS.
 
-## Instalação
+- Segurança Reforçada  
+  Content Security Policy (CSP) otimizada para carregamento seguro de recursos externos como Tailwind e Chart.js.
 
-1. Clone o repositório:
-```bash
-git clone https://github.com/Tempestugo/devbalance.git
-cd devbalance
-```
+- Histórico Inteligente  
+  Visualização diária que calcula automaticamente:
+  - Tempo total monitorado
+  - Quantidade de aplicações utilizadas
+  - Software mais utilizado  
+  Tudo diretamente da base de dados local.
 
-2. Instale as dependências:
-```bash
-npm install
-```
-
-3. Execute a aplicação:
-```bash
-npm start
-```
-
-## Estrutura do Projeto
-
-```
-devbalance/
-├── src/
-│   ├── main.js           # Arquivo principal do Electron
-│   ├── renderer.js       # Lógica da interface frontend
-│   ├── database.js       # Gerenciamento de dados
-│   ├── monitor.js        # Monitor de atividades
-│   └── index.html        # Interface HTML
-├── package.json
-├── README.md
-└── LICENSE
-```
-
-## Como Funciona
-
-### Monitoramento
-A aplicação monitora a janela ativa do seu sistema a cada 2 segundos, capturando:
-- Nome da aplicação
-- Título da janela
-- Domínio (para navegadores)
-- Duração da sessão
-
-### Armazenamento
-Os dados são armazenados em arquivos JSON locais por data, organizados em:
-```
-~/.config/devbalance/activity-data/
-├── 2025-12-25.json
-├── 2025-12-26.json
-└── 2025-12-27.json
-```
-
-### Análise
-A interface oferece 4 visualizações:
-- **Monitor**: Atividade em tempo real
-- **Diário**: Histórico por dia
-- **Semanal**: Gráfico de barras com tendência
-- **Mensal**: Gráfico de linha com escala fixa (12 horas)
+---
 
 ## Tecnologias Utilizadas
 
-- **Electron** - Framework para aplicações desktop
-- **Node.js** - Runtime JavaScript
-- **Tailwind CSS** - Framework CSS
-- **Chart.js** - Biblioteca de gráficos
-- **Plus Jakarta Sans** - Fonte tipográfica
+- Electron
+- Node.js
+- active-win
+- Chart.js
+- Tailwind CSS
 
-## APIs Utilizadas
+---
 
-- `active-win` - Detecção de janela ativa
-- `fs` - Sistema de arquivos Node.js
+## Instalação e Execução
 
-## Configuração de CSP
+### Requisitos
 
-A aplicação utiliza Content Security Policy para segurança. Os seguintes domínios são permitidos:
-- cdn.tailwindcss.com (Tailwind CSS)
-- cdnjs.cloudflare.com (Chart.js)
-- fonts.googleapis.com e fonts.gstatic.com (Fontes)
-- icons.duckduckgo.com (Ícones de domínios)
-- cdn.jsdelivr.net (Ícones de aplicações)
+- Node.js 16.x ou superior
+- npm
 
-## Licença
+### Passo a Passo
 
-Este projeto está licenciado sob a MIT License. Veja o arquivo LICENSE para mais detalhes.
+1. Clone o projeto
+   ```bash
+   git clone https://github.com/Tempestugo/devbalance-pro.git
+   cd devbalance-pro
+````
+
+2. Instale as dependências
+
+   ```bash
+   npm install
+   ```
+
+3. Inicie a aplicação
+
+   ```bash
+   npm start
+   ```
+
+4. Gerar executável (.exe)
+
+   ```bash
+   npm run build:win
+   ```
+
+O executável será gerado na pasta `/dist`.
+
+---
+
+## Estrutura do Projeto
+
+```text
+devbalance-pro/
+├── build/             # Ícones e recursos de compilação
+├── src/
+│   ├── main.js        # Processo principal e segurança (CSP)
+│   ├── monitor.js     # Lógica de rastreamento assíncrona v7+
+│   ├── database.js    # Persistência em JSON local
+│   ├── preload.js     # Ponte segura IPC (Main <-> Renderer)
+│   ├── renderer.js    # Gestão da interface e gráficos
+│   └── index.html     # Estrutura da UI com Tailwind
+└── package.json       # Scripts e dependências
+```
+
+---
+
+## Como Funciona o Monitoramento
+
+O sistema utiliza um loop de verificação a cada 2 segundos:
+
+* Identificação
+  Detecta o nome do processo e o título da janela ativa através do active-win.
+
+* Filtro Inteligente
+  Higieniza títulos de janelas e identifica domínios de navegadores conhecidos como GitHub, YouTube e Notion.
+
+* Persistência
+  As sessões são gravadas localmente em arquivos JSON organizados por data, por exemplo:
+
+  ```text
+  2025-12-27.json
+  ```
+
+---
+
+## Configuração de Segurança (CSP)
+
+A aplicação utiliza uma Content Security Policy restritiva, permitindo apenas conexões essenciais:
+
+* cdn.tailwindcss.com
+* cdnjs.cloudflare.com
+* cdn.jsdelivr.net
+* icons.duckduckgo.com
+
+---
 
 ## Autor
 
-Desenvolvido por Tempestugo
+Desenvolvido por [Tempestugo](https://github.com/Tempestugo)
 
-## Suporte
 
-Para reportar bugs ou sugerir melhorias, abra uma issue no repositório.
