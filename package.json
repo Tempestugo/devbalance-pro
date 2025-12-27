@@ -1,0 +1,37 @@
+{
+  "name": "devbalance-pro",
+  "version": "1.0.0",
+  "description": "Desktop activity monitoring application",
+  "main": "src/main.js",
+  "scripts": {
+    "start": "electron src/main.js",
+    "dev": "nodemon --exec electron . --watch src --ext js,json",
+    "build:win": "electron-builder --win --publish never"
+  },
+  "build": {
+    "appId": "com.devbalance.app",
+    "productName": "DevBalance PRO",
+    "asar": true,
+    "directories": {
+      "output": "dist"
+    },
+    "files": [
+      "src/**/*",
+      "package.json"
+    ],
+    "win": {
+      "target": [
+        "portable"
+      ],
+      "icon": "build/icon.ico"
+    }
+  },
+  "devDependencies": {
+    "electron": "^31.0.0",
+    "electron-builder": "^24.9.1",
+    "nodemon": "^3.0.2"
+  },
+  "dependencies": {
+    "active-win": "^9.0.0"
+  }
+}

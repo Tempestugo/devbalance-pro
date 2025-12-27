@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>DevBalance PRO</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link rel="icon" href="data:;base64,iVBORw0KGgoAAAANSUhEUgAAABAAAAAQCAYAAAAf8/9hAAAAMUlEQVR42mP8z8BQD8AMpB6GAf9HMf7f9B/EfsB4GOf/Tf9B7AeMh3H+3/Qf9H8YGAByfQ9+Ph870AAAAABJRU5ErkJggg==">
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Plus+Jakarta+Sans:wght@300;400;500;600;700;800&display=swap');
+
+        :root {
+            --bg-deep: #09090b;
+            --card-border: rgba(255, 255, 255, 0.08);
+            --accent: #f4f4f5;
+        }
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: var(--bg-deep);
+            color: #fafafa;
+        }
+
+        .glass-panel {
+            background: rgba(18, 18, 21, 0.7);
+            border: 1px solid var(--card-border);
+            box-shadow: 0 4px 30px rgba(0, 0, 0, 0.5);
+        }
+
+        .track-bg { background: rgba(255, 255, 255, 0.05); height: 2px; }
+        .track-fill {
+            background: #fafafa;
+            height: 100%;
+            transition: width 0.8s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+        ::-webkit-scrollbar { width: 5px; }
+        ::-webkit-scrollbar-track { background: transparent; }
+        ::-webkit-scrollbar-thumb { background: #27272a; border-radius: 10px; }
+
+        .btn-action { transition: all 0.2s cubic-bezier(0.4, 0, 0.2, 1); }
+        .btn-action:active { transform: scale(0.96); }
+
+        .status-pulse {
+            width: 8px; height: 8px; border-radius: 50%;
+            animation: pulse 2s infinite;
+        }
+        .status-pulse.active {
+            background: #22c55e;
+            box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4);
+        }
+        .status-pulse.idle {
+            background: #71717a;
+        }
+
+        @keyframes pulse {
+            0% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0.4); }
+            70% { box-shadow: 0 0 0 10px rgba(34, 197, 94, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(34, 197, 94, 0); }
+        }
+
+        .tab-active {
+            background: #27272a;
+            color: white;
+            box-shadow: 0 1px 3px rgba(0, 0, 0, 0.3);
+        }
+
+        .view-section {
+            display: none;
+            animation: fadeIn 0.3s ease-in;
+        }
+        .view-section.active {
+            display: block;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; transform: translateY(10px); }
+            to { opacity: 1; transform: translateY(0); }
+        }
+
+        .chart-bar {
+            height: 120px;
+            display: flex;
+            align-items: flex-end;
+            gap: 8px;
+        }
+        .bar-item {
+            flex: 1;
+            background: #27272a;
+            border-radius: 4px 4px 0 0;
+            position: relative;
+            transition: all 0.3s ease;
+        }
+        .bar-item:hover {
+            background: #3f3f46;
+        }
+
+
+        .accordion-content {
+            max-height: 0;
+            overflow: hidden;
+            transition: max-height 0.3s ease;
+        }
+        .accordion-content.open {
+            max-height: 500px;
+        }
+        .accordion-toggle {
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+        .accordion-toggle.rotated {
+            transform: rotate(180deg);
+        }
+        .domain-item {
+            background: rgba(39, 39, 42, 0.5);
+            border-left: 2px solid #3f3f46;
+            transition: border-color 0.2s;
+        }
+        .domain-item:hover {
+            border-left-color: #71717a;
+            background: rgba(63, 63, 70, 0.5);
+        }
+
+        #weekly-chart .bg-zinc-800, #monthly-chart .bg-zinc-800 {
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        }
+
+
+        .group:hover .bg-zinc-800 {
+            background-color: #3b82f6 !important; 
+            filter: brightness(1.5);
+            box-shadow: 0 0 20px rgba(59, 130, 246, 0.6);
+            transform: translateY(-2px);
+        }
+
+
+        #monthly-chart .group:hover .bg-zinc-800 {
+            background-color: #10b981 !important;
+            box-shadow: 0 0 20px rgba(16, 185, 129, 0.6);
+        }
+        .accordion-content.open {
+            max-height: 1000px !important; 
+            opacity: 1;
+        }
+    </style>
+</head>
+<body class="antialiased selection:bg-zinc-700">
+
+<header class="border-b border-zinc-800/50 px-8 py-4 sticky top-0 bg-zinc-950/80 backdrop-blur-md z-50">
+    <div class="max-w-6xl mx-auto flex items-center justify-between">
+        <div class="flex items-center gap-4">
+            <div class="h-8 w-8 bg-zinc-100 rounded-md flex items-center justify-center text-zinc-950">
+                <svg xmlns="http://www.w3.org/2000/svg" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M12 2v20"/><path d="M2 12h20"/><path d="m4.93 4.93 14.14 14.14"/><path d="m4.93 19.07 14.14-14.14"/></svg>
+            </div>
+            <div>
+                <h1 class="text-sm font-bold tracking-tight uppercase">DevBalance</h1>
+                <div class="flex items-center gap-2">
+                    <div class="status-pulse idle" id="status-indicator"></div>
+                    <span class="text-[10px] text-zinc-500 font-medium uppercase tracking-widest" id="status-label">Standby</span>
+                </div>
+            </div>
+        </div>
+
+        <nav class="flex gap-1 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800">
+            <button onclick="switchView('monitor')" class="tab-btn tab-active px-4 py-1.5 text-xs font-medium rounded-md transition-all" data-view="monitor">Monitor</button>
+            <button onclick="switchView('daily')" class="tab-btn px-4 py-1.5 text-xs font-medium rounded-md text-zinc-500 hover:text-zinc-300 transition-all" data-view="daily">Diário</button>
+            <button onclick="switchView('weekly')" class="tab-btn px-4 py-1.5 text-xs font-medium rounded-md text-zinc-500 hover:text-zinc-300 transition-all" data-view="weekly">Semanal</button>
+            <button onclick="switchView('monthly')" class="tab-btn px-4 py-1.5 text-xs font-medium rounded-md text-zinc-500 hover:text-zinc-300 transition-all" data-view="monthly">Mensal</button>
+        </nav>
+    </div>
+</header>
+
+<main class="max-w-6xl mx-auto px-8 py-10">
+
+    <!-- MONITOR VIEW (Tempo Real) -->
+    <section id="view-monitor" class="view-section active space-y-12">
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-10 items-center">
+            <div class="space-y-6">
+                <div class="space-y-1">
+                    <span class="text-xs font-semibold text-zinc-500 uppercase tracking-widest">Atividade em Foco</span>
+                    <h2 class="text-5xl font-bold tracking-tighter" id="current-app-name">—</h2>
+                    <p class="text-zinc-400 text-sm max-w-sm" id="current-app-title">Aguardando monitoramento...</p>
+                </div>
+                <div class="flex items-baseline gap-2">
+                    <span class="text-6xl font-black tracking-tighter" id="timer-display">00:00</span>
+                    <span class="text-zinc-600 font-medium italic text-lg">minutos</span>
+                </div>
+                <div class="flex gap-2">
+                    <button onclick="startMonitoring()" class="btn-action px-6 py-2.5 bg-zinc-100 text-zinc-950 rounded-lg text-sm font-bold hover:bg-white transition">
+                        Iniciar
+                    </button>
+                    <button onclick="stopMonitoring()" class="btn-action px-6 py-2.5 bg-zinc-800 text-zinc-300 rounded-lg text-sm font-bold hover:bg-zinc-700 transition">
+                        Parar
+                    </button>
+                </div>
+            </div>
+
+            <div class="grid grid-cols-2 gap-4">
+                <div class="glass-panel p-6 rounded-xl space-y-2 border-l-2 border-l-zinc-100">
+                    <p class="text-[10px] uppercase tracking-widest text-zinc-500">Tempo Total Hoje</p>
+                    <p class="text-2xl font-bold" id="total-day-time">0m</p>
+                </div>
+                <div class="glass-panel p-6 rounded-xl space-y-2">
+                    <p class="text-[10px] uppercase tracking-widest text-zinc-500">Apps Detectados</p>
+                    <p class="text-2xl font-bold" id="apps-count">0</p>
+                </div>
+            </div>
+        </div>
+
+        <hr class="border-zinc-900">
+
+        <div class="space-y-6">
+            <div class="flex items-center justify-between">
+                <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400">Distribuição de Foco Hoje</h3>
+            </div>
+
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1" id="monitor-stats-grid">
+                <div class="p-8 text-center text-zinc-600 col-span-full">
+                    Nenhum dado ainda. Inicie o monitoramento.
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- DAILY VIEW -->
+    <section id="view-daily" class="view-section space-y-8">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold tracking-tight">Histórico Diário</h2>
+            <div class="flex gap-2 bg-zinc-900/50 p-1 rounded-lg border border-zinc-800" id="date-selector">
+                <button class="px-3 py-1 text-xs font-medium rounded-md bg-zinc-800 text-white">Carregando...</button>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-3 gap-4">
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Tempo Total</p>
+                <p class="text-3xl font-bold" id="daily-total">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Apps Usados</p>
+                <p class="text-3xl font-bold" id="daily-apps">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Mais Usado</p>
+                <p class="text-xl font-bold truncate" id="daily-top">—</p>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1" id="daily-stats-grid">
+            <div class="p-8 text-center text-zinc-600 col-span-full">Selecione uma data</div>
+        </div>
+    </section>
+
+    <!-- WEEKLY VIEW  -->
+    <section id="view-weekly" class="view-section space-y-8">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold tracking-tight">Relatório Semanal</h2>
+            <span class="text-xs text-zinc-500 uppercase tracking-widest" id="week-range">Últimos 7 dias</span>
+        </div>
+
+        <div class="grid grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Total Semana</p>
+                <p class="text-3xl font-bold" id="weekly-total">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Média/Dia</p>
+                <p class="text-3xl font-bold" id="weekly-avg">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Dias Ativos</p>
+                <p class="text-3xl font-bold" id="weekly-days">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Top App</p>
+                <p class="text-xl font-bold truncate" id="weekly-top">—</p>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-xl space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400">Uso por Dia</h3>
+            <div class="chart-bar" id="weekly-chart" style="height: 200px; display: flex; align-items: flex-end;">
+
+            </div>
+            <div class="flex justify-between text-[10px] text-zinc-600 uppercase" id="weekly-labels">
+
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400">Apps Mais Usados (Semana)</h3>
+            <div class="space-y-2" id="weekly-apps-list">
+
+            </div>
+        </div>
+    </section>
+
+    <!-- MONTHLY VIEW (Relatório Mensal) -->
+    <section id="view-monthly" class="view-section space-y-8">
+        <div class="flex items-center justify-between">
+            <h2 class="text-2xl font-bold tracking-tight">Relatório Mensal</h2>
+            <span class="text-xs text-zinc-500 uppercase tracking-widest" id="month-name">—</span>
+        </div>
+
+        <div class="grid grid-cols-4 gap-4">
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Total Mês</p>
+                <p class="text-3xl font-bold" id="monthly-total">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Média/Dia</p>
+                <p class="text-3xl font-bold" id="monthly-avg">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Dias Ativos</p>
+                <p class="text-3xl font-bold" id="monthly-days">—</p>
+            </div>
+            <div class="glass-panel p-5 rounded-xl space-y-2">
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Top App</p>
+                <p class="text-xl font-bold truncate" id="monthly-top">—</p>
+            </div>
+        </div>
+
+        <div class="glass-panel p-6 rounded-xl space-y-4">
+            <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400">Tendência Mensal</h3>
+            <div class="chart-bar" id="monthly-chart" style="height: 250px; display: flex; align-items: flex-end;">
+
+            </div>
+        </div>
+
+        <div class="space-y-3">
+            <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400">Top 10 Apps do Mês</h3>
+            <div class="grid grid-cols-2 gap-2" id="monthly-apps-grid">
+
+            </div>
+        </div>
+    </section>
+
+</main>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
+<script src="renderer.js"></script>
+</body>
+</html>
