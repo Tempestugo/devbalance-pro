@@ -62,7 +62,7 @@ devbalance-pro/
 └── package.json
 Funcionamento Básico
 A cada 2 segundos a aplicação verifica a janela ativa.
-
+```
 
 
 
