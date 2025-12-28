@@ -40,17 +40,20 @@ function formatTimer(seconds) {
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
 }
 
+
 function getAppIcon(appName) {
     const name = appName.toLowerCase();
     const base = "https://cdn.jsdelivr.net/gh/walkxcode/dashboard-icons/png/";
 
     const appLogos = {
         'code': 'vscode.png',
+        'visual studio code': 'vscode.png',
         'intellij': 'intellij.png',
         'idea': 'intellij.png',
         'chrome': 'google-chrome.png',
         'spotify': 'spotify.png',
         'discord': 'discord.png',
+        'instagram': 'instagram.png',
         'notion': 'notion.png',
         'powershell': 'terminal.png',
         'electron': 'electron.png',
@@ -60,24 +63,31 @@ function getAppIcon(appName) {
 
     let filename = null;
     for (const [key, val] of Object.entries(appLogos)) {
-        if (name.includes(key)) { filename = val; break; }
+        if (name.includes(key)) {
+            filename = val;
+            break;
+        }
     }
 
     if (filename) {
-        return `<img src="${base}${filename}" crossorigin="anonymous" class="w-10 h-10 object-contain" onerror="this.src='https://www.google.com/s2/favicons?sz=64&domain=google.com'">`;
+        return `<img src="${base}${filename}" class="w-10 h-10 object-contain" onerror="this.src='https://www.google.com/s2/favicons?sz=64&domain=${name.replace(/\s/g, '')}.com'">`;
     }
 
 
-    const fallbackService = `https://icons.duckduckgo.com/ip3/${name}.com.ico`;
-    
-    return `<img src="${fallbackService}" class="w-10 h-10 object-contain" 
-            onerror="this.onerror=null; this.parentElement.innerHTML='<span class=\'text-2xl\'>📱</span>'">`;
+    const cleanName = name.replace(/\s/g, '');
+    const fallbackService = `https://icons.duckduckgo.com/ip3/${cleanName}.com.ico`;
+
+    return `<img src="${fallbackService}" class="w-10 h-10 object-contain"
+            onerror="this.onerror=null; this.src='https://www.google.com/s2/favicons?sz=64&domain=${cleanName}.com'; this.onerror=function(){this.parentElement.innerHTML='<span class=\'text-2xl\'>📱</span>'}">`;
 }
 
 function getDomainIcon(domain) {
     if (!domain) return '<span class="text-lg">🌐</span>';
-    const iconUrl = `https://icons.duckduckgo.com/ip3/${domain}.ico`;
-    return `<img src="${iconUrl}" class="w-5 h-5 object-contain inline-block mr-2" onerror="this.onerror=null; this.src='https://www.google.com/s2/favicons?sz=32&domain=${domain}'">`;
+
+    const iconUrl = `https://www.google.com/s2/favicons?sz=64&domain=${domain}`;
+
+    return `<img src="${iconUrl}" class="w-5 h-5 object-contain inline-block mr-2"
+            onerror="this.onerror=null; this.src='https://icons.duckduckgo.com/ip3/${domain}.ico'">`;
 }
 
 function cleanId(name) { return name.toLowerCase().replace(/[^a-z0-9]/g, ''); }

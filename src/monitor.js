@@ -38,6 +38,7 @@ class ActivityMonitor {
 
           if (appName !== this.currentApp || domain !== this.currentDomain) {
             await this.saveCurrentSession();
+
             this.currentApp = appName;
             this.currentTitle = windowTitle;
             this.currentDomain = domain;
@@ -72,7 +73,7 @@ class ActivityMonitor {
   async saveCurrentSession() {
     if (this.currentApp && this.startTime) {
       const duration = Math.floor((Date.now() - this.startTime) / 1000);
-      if (duration > 3) {
+      if (duration > 2) {
         await this.database.saveSession({
           app: this.currentApp,
           title: this.currentTitle,
@@ -80,7 +81,6 @@ class ActivityMonitor {
           domain: this.currentDomain,
           timestamp: new Date().toISOString()
         });
-        console.log(`💾 Sessão salva: ${this.currentApp} (${duration}s)`);
       }
     }
   }
@@ -88,30 +88,40 @@ class ActivityMonitor {
   extractDomain(title) {
     if (!title) return null;
     const lowerTitle = title.toLowerCase();
-    const knownSites = {
-      'gemini': 'gemini.google.com', 'claude': 'claude.ai',
-      'chatgpt': 'chatgpt.com', 'notion': 'notion.so',
-      'discord': 'discord.com', 'github': 'github.com',
-      'youtube': 'youtube.com', 'google': 'google.com'
-    };
-    for (const [key, domain] of Object.entries(knownSites)) {
-      if (lowerTitle.includes(key)) return domain;
+
+    const knownSites = [
+        { key: 'instagram', domain: 'instagram.com' },
+        { key: 'notion', domain: 'notion.so' },
+        { key: 'gemini.google', domain: 'gemini.google.com' },
+        { key: 'chatgpt', domain: 'chatgpt.com' },
+        { key: 'youtube', domain: 'youtube.com' },
+        { key: 'github', domain: 'github.com' },
+        { key: 'discord', domain: 'discord.com' },
+        { key: 'google.com', domain: 'google.com' }
+    ];
+
+    for (const site of knownSites) {
+        if (lowerTitle.includes(site.key)) return site.domain;
     }
-    return null;
+
+    const match = lowerTitle.match(/([a-z0-9|-]+\.)*[a-z0-9|-]+\.[a-z]+/g);
+    return match ? match[0] : null;
   }
 
   sanitizeTitle(title) {
     if (!title) return 'Sem título';
+    if (title.includes(' – ')) return title.split(' – ')[0];
+    if (title.includes(' - ')) return title.split(' - ')[0];
     return title.replace(/[A-Z]:\\.+?\\/gi, '').substring(0, 150);
   }
 
   getAppName(window) {
     if (!window || !window.owner) return 'Desconhecido';
     const ownerName = window.owner.name.toLowerCase();
+
     if (ownerName.includes('idea')) return 'IntelliJ IDEA';
     if (ownerName.includes('code')) return 'Visual Studio Code';
     if (ownerName.includes('chrome')) return 'Google Chrome';
-    if (ownerName.includes('powershell')) return 'PowerShell';
 
     return ownerName.replace('.exe', '').split(/[\\/]/).pop();
   }
