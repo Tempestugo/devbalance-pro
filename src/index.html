@@ -167,6 +167,13 @@
             <button onclick="switchView('weekly')" class="tab-btn px-4 py-1.5 text-xs font-medium rounded-md text-zinc-500 hover:text-zinc-300 transition-all" data-view="weekly">Semanal</button>
             <button onclick="switchView('monthly')" class="tab-btn px-4 py-1.5 text-xs font-medium rounded-md text-zinc-500 hover:text-zinc-300 transition-all" data-view="monthly">Mensal</button>
         </nav>
+
+        <button onclick="openSettings()" class="p-2 text-zinc-500 hover:text-zinc-300 transition" title="Configurações">
+            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+                <circle cx="12" cy="12" r="3"></circle>
+                <path d="M19.4 15a1.65 1.65 0 0 0 .33 1.82l.06.06a2 2 0 0 1 0 2.83 2 2 0 0 1-2.83 0l-.06-.06a1.65 1.65 0 0 0-1.82-.33 1.65 1.65 0 0 0-1 1.51V21a2 2 0 0 1-2 2 2 2 0 0 1-2-2v-.09A1.65 1.65 0 0 0 9 19.4a1.65 1.65 0 0 0-1.82.33l-.06.06a2 2 0 0 1-2.83 0 2 2 0 0 1 0-2.83l.06-.06a1.65 1.65 0 0 0 .33-1.82 1.65 1.65 0 0 0-1.51-1H3a2 2 0 0 1-2-2 2 2 0 0 1 2-2h.09A1.65 1.65 0 0 0 4.6 9a1.65 1.65 0 0 0-.33-1.82l-.06-.06a2 2 0 0 1 0-2.83 2 2 0 0 1 2.83 0l.06.06a1.65 1.65 0 0 0 1.82.33H9a1.65 1.65 0 0 0 1 1.51V3a2 2 0 0 1 2-2 2 2 0 0 1 2 2v.09a1.65 1.65 0 0 0 1 1.51 1.65 1.65 0 0 0 1.82-.33l.06-.06a2 2 0 0 1 2.83 0 2 2 0 0 1 0 2.83l-.06.06a1.65 1.65 0 0 0-.33 1.82V9a1.65 1.65 0 0 0 1.51 1H21a2 2 0 0 1 2 2 2 2 0 0 1-2 2h-.09a1.65 1.65 0 0 0-1.51 1z"></path>
+            </svg>
+        </button>
     </div>
 </header>
 
@@ -212,6 +219,10 @@
         <div class="space-y-6">
             <div class="flex items-center justify-between">
                 <h3 class="text-sm font-bold uppercase tracking-widest text-zinc-400">Distribuição de Foco Hoje</h3>
+                <div class="flex items-center gap-3">
+                    <button id="tomato-btn" title="Iniciar Pomodoro" class="flex items-center justify-center w-9 h-9 rounded-full bg-red-600 hover:bg-red-500 text-white text-lg">🍅</button>
+                    <span id="tomato-count" class="text-sm font-semibold text-red-200" style="display:none">25:00</span>
+                </div>
             </div>
 
             <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-1" id="monitor-stats-grid">
@@ -316,8 +327,11 @@
                 <p class="text-3xl font-bold" id="monthly-days">—</p>
             </div>
             <div class="glass-panel p-5 rounded-xl space-y-2">
-                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Top App</p>
-                <p class="text-xl font-bold truncate" id="monthly-top">—</p>
+                <p class="text-[10px] uppercase tracking-widest text-zinc-500">Pomodoros Concluídos</p>
+                <div class="flex items-center gap-2">
+                    <span class="text-2xl">🍅</span>
+                    <p class="text-3xl font-bold" id="monthly-pomodoros">0</p>
+                </div>
             </div>
         </div>
 
@@ -337,7 +351,111 @@
     </section>
 
 </main>
+
+<!-- Modal de Configurações -->
+<div id="settings-modal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
+    <div class="glass-panel p-6 rounded-xl max-w-md w-full mx-4">
+        <h3 class="text-lg font-bold mb-4">Configurações</h3>
+        <div class="space-y-4">
+            <div>
+                <label class="block text-sm text-zinc-400 mb-1">Duração do Pomodoro (minutos)</label>
+                <input type="number" id="pomodoro-duration" min="1" max="60" class="w-full px-3 py-2 bg-zinc-800 border border-zinc-700 rounded-md text-white">
+            </div>
+            <div>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="enable-notifications" class="rounded">
+                    <span class="text-sm">Habilitar notificações</span>
+                </label>
+            </div>
+            <div>
+                <label class="flex items-center gap-2">
+                    <input type="checkbox" id="enable-sound" class="rounded">
+                    <span class="text-sm">Habilitar som</span>
+                </label>
+            </div>
+        </div>
+        <div class="flex gap-2 mt-6">
+            <button onclick="saveSettings()" class="px-4 py-2 bg-blue-600 hover:bg-blue-500 rounded-md text-white">Salvar</button>
+            <button onclick="closeSettings()" class="px-4 py-2 bg-zinc-700 hover:bg-zinc-600 rounded-md">Cancelar</button>
+        </div>
+    </div>
+</div>
+</script>
 <script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/3.9.1/chart.min.js"></script>
 <script src="renderer.js"></script>
+<script>
+// Wiring for tomato button (uses startPomodoro from renderer.js)
+(() => {
+    function fmt(sec) {
+        const m = Math.floor(sec/60).toString().padStart(2,'0');
+        const s = (sec%60).toString().padStart(2,'0');
+        return `${m}:${s}`;
+    }
+
+    const btn = document.getElementById('tomato-btn');
+    const countEl = document.getElementById('tomato-count');
+    let updater = null;
+
+    if (btn) {
+        btn.addEventListener('click', () => {
+            try {
+                // startPomodoro is defined in renderer.js
+                const prefs = getUserPrefs();
+                startPomodoro(prefs.pomodoroDuration || 25);
+            } catch (e) {
+                console.warn('startPomodoro not available yet', e);
+            }
+            // show counter and update every second reading global pomRemaining
+            countEl.style.display = 'inline-block';
+            if (updater) clearInterval(updater);
+            updater = setInterval(() => {
+                const rem = (window.pomRemaining || 0);
+                countEl.textContent = fmt(rem);
+                if (rem <= 0) {
+                    clearInterval(updater);
+                    updater = null;
+                    setTimeout(() => { countEl.style.display = 'none'; }, 2000);
+                }
+            }, 500);
+        });
+    }
+})();
+
+// Funções de configurações
+function openSettings() {
+    const modal = document.getElementById('settings-modal');
+    const prefs = getUserPrefs();
+    document.getElementById('pomodoro-duration').value = prefs.pomodoroDuration || 25;
+    document.getElementById('enable-notifications').checked = prefs.enableNotifications !== false;
+    document.getElementById('enable-sound').checked = prefs.enableSound !== false;
+    modal.classList.remove('hidden');
+}
+
+function closeSettings() {
+    document.getElementById('settings-modal').classList.add('hidden');
+}
+
+function saveSettings() {
+    const prefs = {
+        pomodoroDuration: parseInt(document.getElementById('pomodoro-duration').value) || 25,
+        enableNotifications: document.getElementById('enable-notifications').checked,
+        enableSound: document.getElementById('enable-sound').checked
+    };
+    setUserPrefs(prefs);
+    closeSettings();
+}
+
+// Atalho de teclado para Pomodoro (T)
+document.addEventListener('keydown', (e) => {
+    if (e.key.toLowerCase() === 't' && !e.ctrlKey && !e.altKey && !e.metaKey) {
+        e.preventDefault();
+        try {
+            togglePomodoro();
+        } catch (err) {
+            console.warn('Toggle Pomodoro failed:', err);
+        }
+    }
+});
+</script>
 </body>
 </html>

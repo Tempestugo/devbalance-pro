@@ -7,20 +7,53 @@ let autoStarted = false;
 
 window.addEventListener('DOMContentLoaded', () => {
     console.log('✅ Interface carregada');
-    loadAvailableDates();
-    loadMonitorStats();
+    loadAvailableDates().catch(e => console.error('Erro loadAvailableDates:', e));
+    loadMonitorStats().catch(e => console.error('Erro loadMonitorStats:', e));
 
     setTimeout(() => {
         if (!autoStarted) {
             console.log('🚀 Auto-start');
-            startMonitoring();
+            startMonitoring().catch(e => console.error('Erro startMonitoring:', e));
             autoStarted = true;
         }
     }, 1000);
 });
 
 
-function getTodayDate() { return new Date().toISOString().split('T')[0]; }
+function getTodayDate() {
+    // Retorna a data no fuso de Brasilia (YYYY-MM-DD) para agrupar arquivos por dia local
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    } catch (e) {
+      const now = new Date();
+      return now.toISOString().split('T')[0];
+    }
+}
+
+
+function getUserPrefs() {
+    try {
+        return JSON.parse(localStorage.getItem('user-prefs') || '{}');
+    } catch (e) {
+        return {};
+    }
+}
+
+function setUserPrefs(prefs) {
+    try {
+        localStorage.setItem('user-prefs', JSON.stringify(prefs));
+    } catch (e) {
+        console.warn('Erro ao salvar prefs:', e);
+    }
+}
+
+function formatDateForStorage(dateObj) {
+    try {
+        return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(dateObj);
+    } catch (e) {
+        return dateObj.toISOString().split('T')[0];
+    }
+}
 
 function formatDate(dateStr) {
     const date = new Date(dateStr + 'T00:00:00');
@@ -38,6 +71,152 @@ function formatTimer(seconds) {
     const mins = Math.floor(seconds / 60);
     const secs = seconds % 60;
     return `${mins.toString().padStart(2, '0')}:${secs.toString().padStart(2, '0')}`;
+}
+
+// ========== POMODORO (UI + som + notificação) ==========
+let pomInterval = null;
+let pomRemaining = 0;
+let pomWidget = null;
+
+function _createPomodoroWidget() {
+    if (pomWidget) return pomWidget;
+    pomWidget = document.createElement('div');
+    pomWidget.id = 'pomodoro-widget';
+    pomWidget.style.position = 'fixed';
+    pomWidget.style.right = '20px';
+    pomWidget.style.bottom = '20px';
+    pomWidget.style.zIndex = '9999';
+    pomWidget.style.background = 'rgba(17,24,39,0.9)';
+    pomWidget.style.color = '#e6edf3';
+    pomWidget.style.padding = '12px 14px';
+    pomWidget.style.borderRadius = '10px';
+    pomWidget.style.boxShadow = '0 6px 18px rgba(2,6,23,0.6)';
+    pomWidget.innerHTML = `
+        <div style="display:flex;align-items:center;gap:10px;">
+            <div id="pom-timer" style="font-weight:700;font-size:16px">25:00</div>
+            <div style="display:flex;gap:6px;">
+                <button id="pom-cancel" style="background:#ef4444;border:none;color:white;padding:6px 8px;border-radius:6px;">Cancelar</button>
+            </div>
+        </div>`;
+    document.body.appendChild(pomWidget);
+    document.getElementById('pom-cancel').addEventListener('click', cancelPomodoro);
+    return pomWidget;
+}
+
+function startPomodoro(minutes = 25) {
+    try {
+        const prefs = getUserPrefs();
+        const duration = minutes || prefs.pomodoroDuration || 25;
+        if (pomInterval) clearInterval(pomInterval);
+        pomRemaining = Math.max(1, Math.floor(duration)) * 60;
+        _createPomodoroWidget();
+        _updatePomUI();
+        pomInterval = setInterval(() => {
+            pomRemaining--;
+            _updatePomUI();
+            if (pomRemaining <= 0) {
+                clearInterval(pomInterval);
+                pomInterval = null;
+                _pomodoroFinished();
+            }
+        }, 1000);
+    } catch (e) {
+        console.error('Erro ao iniciar Pomodoro:', e);
+        // Fallback
+        if (pomInterval) clearInterval(pomInterval);
+        pomRemaining = Math.max(1, Math.floor(minutes || 25)) * 60;
+        _createPomodoroWidget();
+        _updatePomUI();
+        pomInterval = setInterval(() => {
+            pomRemaining--;
+            _updatePomUI();
+            if (pomRemaining <= 0) {
+                clearInterval(pomInterval);
+                pomInterval = null;
+                _pomodoroFinished();
+            }
+        }, 1000);
+    }
+}
+
+function cancelPomodoro() {
+    if (pomInterval) clearInterval(pomInterval);
+    pomInterval = null;
+    pomRemaining = 0;
+    if (pomWidget) {
+        pomWidget.remove();
+        pomWidget = null;
+    }
+}
+
+function isPomActive() {
+    return !!pomInterval;
+}
+
+function getPomRemaining() {
+    return pomRemaining;
+}
+
+function togglePomodoro(minutes) {
+    if (isPomActive()) {
+        cancelPomodoro();
+    } else {
+        const prefs = getUserPrefs();
+        startPomodoro(minutes || prefs.pomodoroDuration || 25);
+    }
+}
+
+function _updatePomUI() {
+    const el = document.getElementById('pom-timer');
+    if (!el) return;
+    const mins = Math.floor(pomRemaining / 60).toString().padStart(2, '0');
+    const secs = (pomRemaining % 60).toString().padStart(2, '0');
+    el.textContent = `${mins}:${secs}`;
+}
+
+function _pomodoroFinished() {
+    const prefs = getUserPrefs();
+
+    try {
+        // Salvar conclusão do Pomodoro
+        const completed = JSON.parse(localStorage.getItem('pomodoro-completed') || '[]');
+        completed.push(new Date().toISOString());
+        localStorage.setItem('pomodoro-completed', JSON.stringify(completed));
+    } catch (e) {
+        console.warn('Erro ao salvar Pomodoro:', e);
+    }
+
+    try {
+        // Notificação
+        if (prefs.enableNotifications !== false && typeof Notification !== 'undefined' && Notification.permission !== 'denied') {
+            if (Notification.permission !== 'granted') Notification.requestPermission();
+            new Notification('Pomodoro concluído', { body: 'Hora de fazer uma pausa!' });
+        }
+    } catch (e) { console.warn('Notification failed', e); }
+
+    // Beep via WebAudio (short sequence)
+    if (prefs.enableSound !== false) {
+        try {
+            const ctx = new (window.AudioContext || window.webkitAudioContext)();
+            const playTone = (freq, dur) => {
+                const o = ctx.createOscillator();
+                const g = ctx.createGain();
+                o.type = 'sine';
+                o.frequency.value = freq;
+                o.connect(g);
+                g.connect(ctx.destination);
+                g.gain.setValueAtTime(0.0001, ctx.currentTime);
+                g.gain.exponentialRampToValueAtTime(0.2, ctx.currentTime + 0.01);
+                o.start();
+                setTimeout(() => { o.stop(); }, dur);
+            };
+            playTone(880, 200);
+            setTimeout(() => playTone(660, 200), 250);
+        } catch (e) { console.warn('Beep failed', e); }
+    }
+
+    // remove widget after short delay
+    setTimeout(() => { cancelPomodoro(); }, 2500);
 }
 
 
@@ -103,7 +282,7 @@ function renderWeeklyChart(dailyTotals) {
     for (let i = 6; i >= 0; i--) {
         const d = new Date();
         d.setDate(d.getDate() - i);
-        const dateStr = d.toISOString().split('T')[0];
+        const dateStr = formatDateForStorage(d);
         const time = dailyTotals[dateStr] || 0;
         const heightPercent = (time / maxTime) * 100;
         const dayLabel = i === 0 ? 'HOJE' : dateStr.split('-')[2];
@@ -127,7 +306,8 @@ function renderMonthlyChart(dailyTotals) {
     const daysInMonth = new Date(now.getFullYear(), now.getMonth() + 1, 0).getDate();
     const monthData = [];
     for (let day = 1; day <= daysInMonth; day++) {
-        const dateStr = `${now.toISOString().slice(0, 8)}${day.toString().padStart(2, '0')}`;
+        const d = new Date(now.getFullYear(), now.getMonth(), day);
+        const dateStr = formatDateForStorage(d);
         monthData.push(dailyTotals[dateStr] || 0);
     }
     if (window.monthlyChartInstance) window.monthlyChartInstance.destroy();
@@ -302,7 +482,7 @@ async function loadWeeklyView() {
 
 async function loadMonthlyView() {
     const dates = await window.api.getAvailableDates();
-    const currentMonth = new Date().toISOString().slice(0, 7);
+    const currentMonth = formatDateForStorage(new Date()).slice(0, 7);
     const monthDates = dates.filter(d => d.startsWith(currentMonth));
     let totalTime = 0;
     const appAgg = {};
@@ -327,6 +507,17 @@ async function loadMonthlyView() {
             ${getAppIcon(app)}
             <div><div class="font-bold text-zinc-200">${app}</div><div class="text-xl font-bold text-zinc-400">${formatTimeShort(data.totalTime)}</div></div>
         </div>`).join('');
+
+    // Contar Pomodoros no mês atual
+    try {
+        const completed = JSON.parse(localStorage.getItem('pomodoro-completed') || '[]');
+        const currentMonth = new Date().toISOString().slice(0, 7); // YYYY-MM
+        const monthlyCount = completed.filter(ts => ts.startsWith(currentMonth + '-')).length;
+        document.getElementById('monthly-pomodoros').textContent = monthlyCount;
+    } catch (e) {
+        console.warn('Erro ao contar Pomodoros:', e);
+        document.getElementById('monthly-pomodoros').textContent = '0';
+    }
 }
 
 async function loadAvailableDates() {
@@ -353,11 +544,6 @@ function startMonitoring() {
     sessionStartTime = Date.now();
     document.getElementById('status-indicator').className = 'status-pulse active';
     document.getElementById('status-label').textContent = 'Monitoring';
-    if (sessionInterval) clearInterval(sessionInterval);
-    sessionInterval = setInterval(() => {
-        const elapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
-        document.getElementById('timer-display').textContent = formatTimer(elapsed);
-    }, 1000);
 }
 
 function stopMonitoring() {
@@ -366,7 +552,7 @@ function stopMonitoring() {
     isMonitoring = false;
     document.getElementById('status-indicator').className = 'status-pulse idle';
     document.getElementById('status-label').textContent = 'Standby';
-    if (sessionInterval) clearInterval(sessionInterval);
+    if (unsubscribe) unsubscribe();
     setTimeout(() => { loadMonitorStats(); }, 500);
 }
 
@@ -374,19 +560,22 @@ function switchView(view) {
     currentView = view;
     document.querySelectorAll('.tab-btn').forEach(btn => btn.classList.toggle('tab-active', btn.dataset.view === view));
     document.querySelectorAll('.view-section').forEach(s => s.classList.toggle('active', s.id === `view-${view}`));
-    if (view === 'monitor') loadMonitorStats();
-    if (view === 'daily') loadDailyView(currentDate);
-    if (view === 'weekly') loadWeeklyView();
-    if (view === 'monthly') loadMonthlyView();
+    if (view === 'monitor') loadMonitorStats().catch(e => console.error('Erro loadMonitorStats:', e));
+    if (view === 'daily') loadDailyView(currentDate).catch(e => console.error('Erro loadDailyView:', e));
+    if (view === 'weekly') loadWeeklyView().catch(e => console.error('Erro loadWeeklyView:', e));
+    if (view === 'monthly') loadMonthlyView().catch(e => console.error('Erro loadMonthlyView:', e));
 }
 
-window.api.onActivityUpdate((data) => {
+const unsubscribe = window.api.onActivityUpdate((data) => {
     const nameEl = document.getElementById('current-app-name');
     const titleEl = document.getElementById('current-app-title');
     const timerEl = document.getElementById('timer-display');
     if(nameEl) nameEl.textContent = data.app || 'Desconhecido';
-    if(titleEl) titleEl.textContent = data.title || 'Iniciando...';
-    if(timerEl) timerEl.textContent = formatTimer(data.elapsedTime);
+    if(titleEl) titleEl.textContent = data.domain ? `${data.title} (${data.domain})` : (data.title || 'Iniciando...');
+    if(timerEl && sessionStartTime) {
+        const sessionElapsed = Math.floor((Date.now() - sessionStartTime) / 1000);
+        timerEl.textContent = `${formatTimer(data.elapsedTime)} / ${formatTimer(sessionElapsed)}`;
+    }
     if (currentView === 'monitor' && (data.elapsedTime % 10 === 0 || data.elapsedTime < 2)) {
         loadMonitorStats();
     }

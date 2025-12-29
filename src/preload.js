@@ -9,7 +9,11 @@ contextBridge.exposeInMainWorld('api', {
   },
 
     onActivityUpdate: (callback) => {
-        ipcRenderer.on('activity-update', (event, data) => callback(data));
+        const listener = (event, data) => callback(data);
+        ipcRenderer.on('activity-update', listener);
+        return () => {
+          ipcRenderer.removeListener('activity-update', listener);
+        };
     },
   getStats: async () => {
     return await ipcRenderer.invoke('get-stats');

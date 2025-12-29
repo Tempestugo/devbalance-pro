@@ -59,7 +59,7 @@ class ActivityMonitor {
            console.error('❌ Erro no ciclo:', error.message);
         }
       }
-    }, 2000);
+    }, 1000);
   }
 
   async stop() {

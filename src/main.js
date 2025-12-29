@@ -30,7 +30,7 @@ function createWindow() {
           "script-src 'self' 'unsafe-inline' https://cdn.tailwindcss.com https://cdnjs.cloudflare.com https://cdn.jsdelivr.net; " +
           "style-src 'self' 'unsafe-inline' https://fonts.googleapis.com; " +
           "font-src 'self' https://fonts.gstatic.com; " +
-          "img-src 'self' data: https://www.google.com https://t0.gstatic.com https://t1.gstatic.com https://icons.duckduckgo.com https://cdn.jsdelivr.net https://raw.githubusercontent.com; " +
+          "img-src 'self' data: https://www.google.com https://t0.gstatic.com https://t1.gstatic.com https://t3.gstatic.com https://icons.duckduckgo.com https://cdn.jsdelivr.net https://raw.githubusercontent.com; " +
           "connect-src 'self' https://cdnjs.cloudflare.com https://cdn.jsdelivr.net"
         ]
       }
@@ -66,6 +66,15 @@ ipcMain.handle('get-available-dates', async () => {
 
 ipcMain.handle('get-stats-by-date', async (event, date) => {
   return await database.getStatsByDate(date);
+});
+
+ipcMain.handle('clear-old-data', async (event, days) => {
+  try {
+    return await database.clearOldData(days);
+  } catch (err) {
+    console.error('❌ Erro ao limpar dados via IPC:', err);
+    return 0;
+  }
 });
 
 // ========== EVENTOS DE MONITORAMENTO ==========

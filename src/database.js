@@ -22,8 +22,13 @@ class Database {
     return path.join(this.dataPath, `${date}.json`);
   }
   getTodayDate() {
-    const now = new Date();
-    return now.toISOString().split('T')[0];
+    // Retorna a data no fuso de Brasilia (YYYY-MM-DD) para agrupar arquivos por dia local
+    try {
+      return new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(new Date());
+    } catch (e) {
+      const now = new Date();
+      return now.toISOString().split('T')[0];
+    }
   }
   async saveSession(session) {
     const date = session.date || this.getTodayDate();
@@ -122,7 +127,8 @@ class Database {
     try {
       const cutoffDate = new Date();
       cutoffDate.setDate(cutoffDate.getDate() - daysToKeep);
-      const cutoffString = cutoffDate.toISOString().split('T')[0];
+      // Garantir comparação por data local (Brasilia)
+      const cutoffString = new Intl.DateTimeFormat('en-CA', { timeZone: 'America/Sao_Paulo' }).format(cutoffDate);
       const files = fs.readdirSync(this.dataPath);
       let deletedCount = 0;
       files.forEach(file => {
